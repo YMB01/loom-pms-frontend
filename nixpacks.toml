@@ -1,0 +1,12 @@
+# Nixpacks (Railway builder: NIXPACKS). See https://nixpacks.com/docs/providers/php
+#
+# PHP 8.2: composer.json requires php ^8.2; php82 is listed here so the Nix
+# environment explicitly includes PHP 8.2 packages.
+# Laravel serves from public/ — required if you use the default Nginx-based PHP start;
+# we override the start command in railway.json to use `php artisan serve`.
+
+[variables]
+NIXPACKS_PHP_ROOT_DIR = "/app/public"
+
+[phases.setup]
+nixPkgs = ["...", "php82"]
