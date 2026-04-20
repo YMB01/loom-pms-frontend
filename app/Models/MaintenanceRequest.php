@@ -15,9 +15,11 @@ class MaintenanceRequest extends Model
 
     protected $fillable = [
         'property_id',
+        'tenant_id',
         'unit',
         'title',
         'description',
+        'photos',
         'priority',
         'status',
         'assigned_to',
@@ -26,9 +28,15 @@ class MaintenanceRequest extends Model
     protected function casts(): array
     {
         return [
+            'photos' => 'array',
             'priority' => MaintenancePriority::class,
             'status' => MaintenanceStatus::class,
         ];
+    }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     public function property(): BelongsTo

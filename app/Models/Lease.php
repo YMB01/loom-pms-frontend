@@ -21,6 +21,7 @@ class Lease extends Model
         'rent_amount',
         'deposit_amount',
         'status',
+        'lease_document',
     ];
 
     protected function casts(): array

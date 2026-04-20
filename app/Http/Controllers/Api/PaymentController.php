@@ -12,6 +12,7 @@ use App\Http\Resources\PaymentResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Services\InAppNotificationService;
 use App\Services\SMSService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -57,11 +58,11 @@ class PaymentController extends Controller
         );
     }
 
-    public function store(StorePaymentRequest $request, SMSService $sms): JsonResponse
+    public function store(StorePaymentRequest $request, SMSService $sms, InAppNotificationService $notify): JsonResponse
     {
         $companyId = $this->companyId();
 
-        $paymentModel = DB::transaction(function () use ($request, $companyId, $sms) {
+        $paymentModel = DB::transaction(function () use ($request, $companyId, $sms, $notify) {
             $payment = Payment::query()->create($request->validated());
 
             $invoice = Invoice::query()
@@ -75,6 +76,12 @@ class PaymentController extends Controller
             if ($payment->tenant) {
                 $sms->sendPaymentReceived($payment->tenant, $payment);
             }
+
+            $notify->notifyManagers(
+                $companyId,
+                'Payment received',
+                'Payment of '.$payment->amount.' recorded for invoice #'.$invoice->id.'.',
+            );
 
             return $payment;
         });

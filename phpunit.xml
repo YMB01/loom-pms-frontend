@@ -22,7 +22,7 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="APP_KEY" value="base64:2fl+Ktvkdf+Fod4YBj2i7D3X9f3g2rXy8vP9mNqW1E="/>
+        <env name="APP_KEY" value="base64:X+ZCpyYxfNrQgoTO87QTpQsUSUYHdVSPoFTyn274fcM="/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>

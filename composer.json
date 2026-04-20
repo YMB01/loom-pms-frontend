@@ -16,9 +16,12 @@
         "ext-tokenizer": "*",
         "ext-xml": "*",
         "africastalking/africastalking": "^3.0",
+        "barryvdh/laravel-dompdf": "^3.0",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
+        "spatie/laravel-backup": "^9.0",
+        "stripe/stripe-php": "^16.0",
         "twilio/sdk": "^8.0"
     },
     "require-dev": {

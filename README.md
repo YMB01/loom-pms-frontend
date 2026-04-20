@@ -32,11 +32,17 @@ Property management API built with Laravel 11, Sanctum, and MySQL.
 
 3. **Database and demo data**
 
+   Create an empty MySQL database (e.g. `CREATE DATABASE loom_pms CHARACTER SET utf8mb4;`) matching `DB_*` in `.env`.
+
    ```bash
-   php artisan migrate --seed
+   php artisan migrate:fresh --seed
    ```
 
-   Demo logins (from `LoomPmsDemoSeeder`): `admin@loomsolutions.com` / `admin123`, `manager@loomsolutions.com` / `admin123`.
+   Demo logins (from `LoomPmsDemoSeeder`): `admin@admin.com` / `admin`, `manager@admin.com` / `admin`.
+
+   **Login fails with “Invalid email or password”?** The DB has no demo user yet, or credentials don’t match. Re-run: `php artisan migrate:fresh --seed` (destructive). Ensure the API is on `http://localhost:8000` and the Next.js app uses `NEXT_PUBLIC_API_URL=http://localhost:8000/api` (including `/api`).
+
+   **Smoke-test the API:** with `php artisan serve` running, run `./scripts/test-api-curl.sh`, or run `php artisan test --filter=LocalApiSmokeTest` (uses SQLite in-memory; no MySQL required for the test).
 
 4. **Queue worker** (required for background SMS)
 

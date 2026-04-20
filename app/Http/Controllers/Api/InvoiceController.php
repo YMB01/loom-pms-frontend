@@ -117,6 +117,46 @@ class InvoiceController extends Controller
         return ApiResponse::success([], 'Invoice deleted.');
     }
 
+    /**
+     * Per-status counts, amounts, and 6-month due-date trends for dashboard invoice widgets.
+     */
+    public function chartSummary(): JsonResponse
+    {
+        $companyId = $this->companyId();
+        $now = Carbon::now();
+
+        $statuses = [
+            'pending' => InvoiceStatus::Pending,
+            'overdue' => InvoiceStatus::Overdue,
+            'paid' => InvoiceStatus::Paid,
+            'partial' => InvoiceStatus::Partial,
+        ];
+
+        $out = [];
+        foreach ($statuses as $key => $status) {
+            $base = Invoice::query()->forCompany($companyId)->where('status', $status);
+            $count = (clone $base)->count();
+            $amount = (float) (clone $base)->sum('amount');
+            $trend = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $ms = $now->copy()->subMonths($i)->startOfMonth();
+                $me = $now->copy()->subMonths($i)->endOfMonth();
+                $trend[] = Invoice::query()
+                    ->forCompany($companyId)
+                    ->where('status', $status)
+                    ->whereBetween('due_date', [$ms->toDateString(), $me->toDateString()])
+                    ->count();
+            }
+            $out[$key] = [
+                'count' => $count,
+                'amount' => round($amount, 2),
+                'trend' => $trend,
+            ];
+        }
+
+        return ApiResponse::success($out, '');
+    }
+
     public function generateMonthly(GenerateMonthlyInvoicesRequest $request): JsonResponse
     {
         $companyId = $this->companyId();

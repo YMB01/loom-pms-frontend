@@ -19,6 +19,11 @@ class UnitController extends Controller
     use FormatsPaginatedResponses;
     use InteractsWithCompany;
 
+    public function __construct()
+    {
+        $this->middleware('subscription.limits:unit')->only('store');
+    }
+
     public function index(IndexUnitRequest $request): JsonResponse
     {
         $companyId = $this->companyId();
@@ -49,6 +54,8 @@ class UnitController extends Controller
 
     public function store(StoreUnitRequest $request): JsonResponse
     {
+        $companyId = $this->companyId();
+
         $data = $request->validated();
         $data['status'] = UnitStatus::from($data['status']);
 

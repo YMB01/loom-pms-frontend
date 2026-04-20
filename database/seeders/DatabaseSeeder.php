@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             LoomPmsDemoSeeder::class,
+            MarketplaceDemoSeeder::class,
         ]);
     }
 }

@@ -9,7 +9,6 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
-use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,6 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->api(prepend: [
             AcceptJsonForApi::class,
+        ]);
+        $middleware->alias([
+            'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
+            'company.subscription' => \App\Http\Middleware\EnsureCompanySubscriptionGate::class,
+            'company.staff' => \App\Http\Middleware\EnsureCompanyStaffUser::class,
+            'portal.tenant' => \App\Http\Middleware\EnsurePortalTenant::class,
+            'subscription.limits' => \App\Http\Middleware\CheckSubscriptionLimits::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -73,7 +79,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ], $e->getStatusCode());
         });
 
-        $exceptions->render(function (Throwable $e, Request $request) {
+        $exceptions->render(function (\Throwable $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;
             }

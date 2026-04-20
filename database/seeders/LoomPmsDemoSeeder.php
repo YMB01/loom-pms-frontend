@@ -2,11 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Enums\CompanyStatus;
+use App\Enums\SubscriptionStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\LeaseStatus;
 use App\Enums\UnitStatus;
 use App\Enums\UserRole;
 use App\Models\Company;
+use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\Invoice;
 use App\Models\Lease;
 use App\Models\Payment;
@@ -25,10 +29,21 @@ class LoomPmsDemoSeeder extends Seeder
         DB::transaction(function (): void {
             $company = Company::query()->create([
                 'name' => 'Loom Solutions PLC',
-                'email' => 'info@loomsolutions.com',
+                'email' => 'company@admin.com',
                 'phone' => '+251911000000',
                 'address' => 'Bole Road, Addis Ababa, Ethiopia',
                 'currency' => 'ETB',
+                'status' => CompanyStatus::Active,
+            ]);
+
+            $proPlan = Plan::query()->where('slug', 'pro')->firstOrFail();
+            Subscription::query()->create([
+                'company_id' => $company->id,
+                'plan_id' => $proPlan->id,
+                'status' => SubscriptionStatus::Active,
+                'trial_ends_at' => null,
+                'current_period_start' => Carbon::now()->startOfMonth(),
+                'current_period_end' => Carbon::now()->addMonth()->startOfMonth(),
             ]);
 
             User::query()->create([
@@ -43,8 +58,8 @@ class LoomPmsDemoSeeder extends Seeder
             User::query()->create([
                 'company_id' => $company->id,
                 'name' => 'manager',
-                'email' => 'manager@loomsolutions.com',
-                'password' => 'admin123',
+                'email' => 'manager@admin.com',
+                'password' => 'admin',
                 'role' => UserRole::PropertyManager,
                 'phone' => '+251911000002',
             ]);

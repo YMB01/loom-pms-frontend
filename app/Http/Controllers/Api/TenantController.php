@@ -10,14 +10,24 @@ use App\Http\Requests\Api\Tenant\StoreTenantRequest;
 use App\Http\Requests\Api\Tenant\UpdateTenantRequest;
 use App\Http\Resources\TenantResource;
 use App\Http\Responses\ApiResponse;
+use App\Models\Lease;
+use App\Models\Payment;
 use App\Models\Tenant;
+use App\Services\InAppNotificationService;
 use App\Services\SMSService;
+use App\Enums\LeaseStatus;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 
 class TenantController extends Controller
 {
     use FormatsPaginatedResponses;
     use InteractsWithCompany;
+
+    public function __construct()
+    {
+        $this->middleware('subscription.limits:tenant')->only('store');
+    }
 
     public function index(IndexTenantRequest $request): JsonResponse
     {
@@ -52,7 +62,7 @@ class TenantController extends Controller
         );
     }
 
-    public function store(StoreTenantRequest $request, SMSService $sms): JsonResponse
+    public function store(StoreTenantRequest $request, SMSService $sms, InAppNotificationService $notify): JsonResponse
     {
         $companyId = $this->companyId();
 
@@ -62,6 +72,12 @@ class TenantController extends Controller
         ));
 
         $sms->sendWelcome($tenant);
+
+        $notify->notifyManagers(
+            $companyId,
+            'New tenant onboarded',
+            "{$tenant->name} was added to your portfolio.",
+        );
 
         return ApiResponse::success(
             [
@@ -96,5 +112,49 @@ class TenantController extends Controller
         $tenant->delete();
 
         return ApiResponse::success([], 'Tenant deleted.');
+    }
+
+    /**
+     * Last 6 calendar months of payments vs expected rent (active lease).
+     */
+    public function paymentHistoryChart(Tenant $tenant): JsonResponse
+    {
+        $companyId = $this->companyId();
+        if ((int) $tenant->company_id !== (int) $companyId) {
+            abort(404);
+        }
+
+        $now = Carbon::now();
+        $lease = Lease::query()
+            ->forCompany($companyId)
+            ->where('tenant_id', $tenant->id)
+            ->where('status', LeaseStatus::Active)
+            ->orderByDesc('start_date')
+            ->first();
+
+        $expectedMonthly = $lease ? (float) $lease->rent_amount : 0.0;
+
+        $months = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $ms = $now->copy()->subMonths($i)->startOfMonth();
+            $me = $now->copy()->subMonths($i)->endOfMonth();
+            $paid = (float) Payment::query()
+                ->forCompany($companyId)
+                ->where('tenant_id', $tenant->id)
+                ->whereBetween('created_at', [$ms, $me])
+                ->sum('amount');
+            $months[] = [
+                'month_key' => $ms->format('Y-m'),
+                'label' => $ms->format('M'),
+                'paid' => round($paid, 2),
+                'expected' => round($expectedMonthly, 2),
+                'missed' => $expectedMonthly > 0 && $paid < $expectedMonthly * 0.5,
+            ];
+        }
+
+        return ApiResponse::success([
+            'months' => $months,
+            'expected_monthly' => round($expectedMonthly, 2),
+        ], '');
     }
 }

@@ -18,6 +18,11 @@ class PropertyController extends Controller
     use FormatsPaginatedResponses;
     use InteractsWithCompany;
 
+    public function __construct()
+    {
+        $this->middleware('subscription.limits:property')->only('store');
+    }
+
     public function index(IndexPropertyRequest $request): JsonResponse
     {
         $companyId = $this->companyId();

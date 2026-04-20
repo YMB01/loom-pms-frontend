@@ -51,4 +51,13 @@ return [
         'from' => env('TWILIO_FROM', env('TWILIO_FROM_NUMBER')),
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'price_basic' => env('STRIPE_PRICE_BASIC'),
+        'price_pro' => env('STRIPE_PRICE_PRO'),
+        'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+    ],
+
 ];

@@ -13,9 +13,15 @@ use App\Models\Unit;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use App\Listeners\RecordBackupFailureInDatabase;
+use App\Listeners\RecordBackupInDatabase;
+use Spatie\Backup\Events\BackupHasFailed;
+use Spatie\Backup\Events\BackupWasSuccessful;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +38,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        File::ensureDirectoryExists(storage_path('backups'));
+
+        Event::listen(BackupWasSuccessful::class, RecordBackupInDatabase::class);
+        Event::listen(BackupHasFailed::class, RecordBackupFailureInDatabase::class);
+
         $this->configureRateLimiting();
 
         $this->bindCompanyScoped('property', Property::class, fn ($q, int $cid) => $q->where('company_id', $cid));

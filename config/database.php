@@ -57,9 +57,20 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql') ? (static function (): array {
+                $sslCa = env('MYSQL_ATTR_SSL_CA');
+                if (! filled($sslCa)) {
+                    return [];
+                }
+                if (PHP_VERSION_ID >= 80500 && class_exists(\Pdo\Mysql::class)) {
+                    return [\Pdo\Mysql::ATTR_SSL_CA => $sslCa];
+                }
+                if (PHP_VERSION_ID < 80500) {
+                    return [PDO::MYSQL_ATTR_SSL_CA => $sslCa];
+                }
+
+                return [];
+            })() : [],
         ],
 
         'mariadb' => [
@@ -77,9 +88,20 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql') ? (static function (): array {
+                $sslCa = env('MYSQL_ATTR_SSL_CA');
+                if (! filled($sslCa)) {
+                    return [];
+                }
+                if (PHP_VERSION_ID >= 80500 && class_exists(\Pdo\Mysql::class)) {
+                    return [\Pdo\Mysql::ATTR_SSL_CA => $sslCa];
+                }
+                if (PHP_VERSION_ID < 80500) {
+                    return [PDO::MYSQL_ATTR_SSL_CA => $sslCa];
+                }
+
+                return [];
+            })() : [],
         ],
 
         'pgsql' => [

@@ -13,6 +13,7 @@ use App\Http\Requests\Api\Maintenance\UpdateMaintenanceRequest;
 use App\Http\Resources\MaintenanceRequestResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\MaintenanceRequest;
+use App\Services\InAppNotificationService;
 use Illuminate\Http\JsonResponse;
 
 class MaintenanceController extends Controller
@@ -38,6 +39,10 @@ class MaintenanceController extends Controller
             $query->where('status', MaintenanceStatus::from($request->validated('status')));
         }
 
+        if ($request->filled('priority')) {
+            $query->where('priority', MaintenancePriority::from($request->validated('priority')));
+        }
+
         if ($request->filled('search')) {
             $term = '%'.addcslashes((string) $request->validated('search'), '%_\\').'%';
             $query->where(function ($q) use ($term): void {
@@ -55,7 +60,7 @@ class MaintenanceController extends Controller
         );
     }
 
-    public function store(StoreMaintenanceRequest $request): JsonResponse
+    public function store(StoreMaintenanceRequest $request, InAppNotificationService $notify): JsonResponse
     {
         $data = $request->validated();
         $data['priority'] = MaintenancePriority::from($data['priority']);
@@ -65,6 +70,12 @@ class MaintenanceController extends Controller
 
         $maintenance = MaintenanceRequest::query()->create($data);
         $maintenance->load(['property', 'assignee']);
+
+        $notify->notifyManagers(
+            $this->companyId(),
+            'New maintenance request',
+            $maintenance->title,
+        );
 
         return ApiResponse::success(
             ['maintenance_request' => MaintenanceRequestResource::make($maintenance)->resolve()],
@@ -107,5 +118,18 @@ class MaintenanceController extends Controller
         $maintenance->delete();
 
         return ApiResponse::success([], 'Maintenance request deleted.');
+    }
+
+    /** Status/priority counts for dashboard bar chart + filters. */
+    public function statsSummary(): JsonResponse
+    {
+        $companyId = $this->companyId();
+
+        return ApiResponse::success([
+            'open' => MaintenanceRequest::query()->forCompany($companyId)->where('status', MaintenanceStatus::Open)->count(),
+            'in_progress' => MaintenanceRequest::query()->forCompany($companyId)->where('status', MaintenanceStatus::InProgress)->count(),
+            'resolved' => MaintenanceRequest::query()->forCompany($companyId)->where('status', MaintenanceStatus::Resolved)->count(),
+            'urgent' => MaintenanceRequest::query()->forCompany($companyId)->where('priority', MaintenancePriority::Urgent)->count(),
+        ], '');
     }
 }
